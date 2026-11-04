@@ -5,13 +5,13 @@ from __future__ import annotations
 from .lander import Lander
 from .world import World
 
-# Arcade-tuned lunar gravity (px/s^2) — weaker than Earth feel
-MOON_GRAVITY = 18.0
+# Arcade-tuned lunar gravity (px/s^2) for HD canvas
+MOON_GRAVITY = 32.0
 
 # Soft landing thresholds
-MAX_LAND_SPEED_Y = 18.0
-MAX_LAND_SPEED_X = 14.0
-MAX_LAND_TILT = 18.0  # degrees from upright
+MAX_LAND_SPEED_Y = 28.0
+MAX_LAND_SPEED_X = 22.0
+MAX_LAND_TILT = 16.0  # degrees from upright
 
 
 def update_physics(lander: Lander, world: World, dt: float) -> str | None:
@@ -23,14 +23,13 @@ def update_physics(lander: Lander, world: World, dt: float) -> str | None:
         "landed" on soft pad touchdown,
         "crashed" on hard/bad contact or leaving the world.
     """
-    if not lander.alive or lander.landed:
+    if not lander.alive or lander.landed or lander.separated:
         return None
 
     lander.apply_thrust(dt)
     lander.integrate(MOON_GRAVITY, dt)
 
-    # Wrap-ish clamp so you don't fly forever sideways
-    if lander.x < -20 or lander.x > world.width + 20 or lander.y < -40:
+    if lander.x < -40 or lander.x > world.width + 40 or lander.y < -80:
         lander.alive = False
         return "crashed"
 
@@ -54,6 +53,7 @@ def update_physics(lander: Lander, world: World, dt: float) -> str | None:
         lander.alive = True
         lander.vx = 0.0
         lander.vy = 0.0
+        lander.angle = 0.0
         lander.thrusting = False
         return "landed"
 

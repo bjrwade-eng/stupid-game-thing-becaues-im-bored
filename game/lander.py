@@ -6,31 +6,38 @@ import math
 
 
 class Lander:
-    """Simple Apollo-flavored lander for arcade physics."""
+    """Apollo LM–flavored lander for arcade physics (HD scale)."""
 
-    WIDTH = 7
-    HEIGHT = 9
+    WIDTH = 28
+    HEIGHT = 36
     MAX_FUEL = 100.0
-    ROTATE_SPEED = 90.0  # degrees per second
-    THRUST = 55.0  # px/s^2
-    FUEL_BURN = 12.0  # fuel units per second while thrusting
+    ROTATE_SPEED = 80.0  # degrees per second
+    THRUST = 95.0  # px/s^2
+    FUEL_BURN = 10.0  # fuel units per second while thrusting
 
     def __init__(self, x: float, y: float) -> None:
         self.x = x
         self.y = y
-        self.vx = 18.0
+        self.vx = 32.0
         self.vy = 0.0
         self.angle = 0.0  # 0 = upright (nose up), degrees; positive = clockwise
         self.fuel = self.MAX_FUEL
         self.thrusting = False
         self.alive = True
         self.landed = False
+        # After soft landing: ascent stage separates
+        self.separated = False
+        self.ascent_x = x
+        self.ascent_y = y
+        self.ascent_vy = 0.0
+        self.descent_x = x
+        self.descent_y = y
 
     def reset(self, x: float, y: float) -> None:
         self.__init__(x, y)
 
     def update_controls(self, rotate_dir: float, thrust: bool, dt: float) -> None:
-        if not self.alive or self.landed:
+        if not self.alive or self.landed or self.separated:
             self.thrusting = False
             return
 
@@ -48,7 +55,7 @@ class Lander:
         self.vy += math.sin(rad) * self.THRUST * dt
 
     def integrate(self, gravity: float, dt: float) -> None:
-        if self.landed:
+        if self.landed or self.separated:
             self.vx = 0.0
             self.vy = 0.0
             return
@@ -57,6 +64,28 @@ class Lander:
         self.vy += gravity * dt
         self.x += self.vx * dt
         self.y += self.vy * dt
+
+    def begin_ascent(self) -> None:
+        """Leave descent stage on the pad; launch ascent stage."""
+        self.separated = True
+        self.descent_x = self.x
+        self.descent_y = self.y
+        self.ascent_x = self.x
+        self.ascent_y = self.y - 6.0
+        self.ascent_vy = -40.0
+        self.thrusting = False
+
+    def update_ascent(self, dt: float) -> bool:
+        """
+        Animate ascent stage rising.
+        Returns True once it has left the top of the screen.
+        """
+        if not self.separated:
+            return False
+        # Accelerate upward (celebration burn — ignore lunar gravity)
+        self.ascent_vy -= 90.0 * dt
+        self.ascent_y += self.ascent_vy * dt
+        return self.ascent_y < -60.0
 
     @property
     def feet_y(self) -> float:

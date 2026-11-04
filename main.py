@@ -1,4 +1,4 @@
-"""Apollo Lunar Lander — retro pixel Windows game entry point."""
+"""Apollo Lunar Lander — HD Windows game entry point."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ import pygame
 
 from game.states import Game
 
-# Window is a nearest-neighbor scale of the internal pixel canvas
-SCALE = 3
+# Internal canvas is already HD; mild scale for a larger window
+SCALE = 1
 FPS = 60
 
 
 def main() -> int:
     pygame.init()
-    pygame.display.set_caption("Apollo Lunar Lander")
+    pygame.display.set_caption("Apollo Lunar Module — Landing Sim")
 
     game = Game()
     window_size = (game.INTERNAL_W * SCALE, game.INTERNAL_H * SCALE)
@@ -26,7 +26,6 @@ def main() -> int:
     running = True
     while running:
         dt = clock.tick(FPS) / 1000.0
-        # Cap huge stalls (alt-tab) so physics don't explode
         dt = min(dt, 1.0 / 20.0)
 
         for event in pygame.event.get():
@@ -37,7 +36,10 @@ def main() -> int:
         game.update(dt)
         game.draw(canvas)
 
-        pygame.transform.scale(canvas, window_size, screen)
+        if SCALE == 1:
+            screen.blit(canvas, (0, 0))
+        else:
+            pygame.transform.scale(canvas, window_size, screen)
         pygame.display.flip()
 
     pygame.quit()
